@@ -1,0 +1,6 @@
+﻿  ata_operations.c
+src\ata_operations.c(1): fatal error C1083: Cannot open include file: 'ata_base.h': No such file or directory
+  ata_dispatch.c
+src\ata_dispatch.c(1): fatal error C1083: Cannot open include file: 'ata_base.h': No such file or directory
+  ata.c
+src\ata.c(1): fatal error C1083: Cannot open include file: 'ata_base.h': No such file or directory

@@ -1,0 +1,7 @@
+
+Notes specific to the development of Pintos to UTCN, Romania
+
+ - Timotei Dolean developed (October 2012) a patch of bochs 2.2.6 sources, to make them compile with newer versions of gcc. 
+  - the patch is located in file "bochs-2.2.6-hash-map.patch"
+  - to apply this patch also, beside the ones provided with the original souces of Pintos, run the script "bochs-2.2.6-build_utcn.sh", instead of the one ("bochs-2.2.6-build.sh") provided with the original sources. 
+
