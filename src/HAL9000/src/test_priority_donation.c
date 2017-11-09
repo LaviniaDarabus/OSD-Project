@@ -286,6 +286,8 @@ STATUS
             MutexRelease(&mutexes[1]);
             bReleasedMutexes[1] = TRUE;
 
+			printf("Close\n");
+
             if (!_ThreadValidatePriority(ThreadPriorityDefault))
             {
                 status = STATUS_ASSERTION_FAILURE;

@@ -643,6 +643,34 @@ ThreadGetId(
     return (NULL != pThread) ? pThread->Id : 0;
 }
 
+static FUNC_CompareFunction ThreadComparePriority;
+
+static
+INT64
+(__cdecl ThreadComparePriority) (
+	IN      PLIST_ENTRY     FirstElem,
+	IN      PLIST_ENTRY     SecondElem,
+	IN_OPT  PVOID           Context
+)
+{
+	ASSERT(NULL != FirstElem);
+	ASSERT(NULL != SecondElem);
+	ASSERT(Context == NULL);
+
+	PTHREAD pFirstThread = CONTAINING_RECORD(FirstElem, THREAD, ReadyList);
+	PTHREAD pSecondThread = CONTAINING_RECORD(SecondElem, THREAD, ReadyList);
+
+	if (pFirstThread->Priority > pSecondThread->Priority) {
+		return 1;
+	}
+
+	if (pFirstThread->Priority < pSecondThread->Priority) {
+		return -1;
+	}
+
+	return 0;
+}
+
 void
 ThreadDonatePriority(
 	IN PTHREAD Donor,
@@ -652,7 +680,7 @@ ThreadDonatePriority(
 	ASSERT(NULL != Donor);
 	ASSERT(NULL != Receiver);
 
-	InsertTailList(&Receiver->Donations, &Donor->ReadyList);
+	InsertOrderedList(&Receiver->Donations, &Donor->ReadyList, ThreadComparePriority, NULL);
 	ThreadUpdatePriority(Receiver);
 }
 
@@ -666,9 +694,6 @@ ThreadUpdatePriority(
 
 	PLIST_ENTRY pEntry;
 	pEntry = RemoveHeadList(&pThread->Donations);
-
-	PTHREAD pDonorThread = CONTAINING_RECORD(pEntry, THREAD, ReadyList);
-	pThread->Priority = pDonorThread->Priority; //receive donation
 
 	ASSERT(NULL != pEntry);
 	
@@ -689,7 +714,32 @@ ThreadUpdatePriority(
 }
 
 //cleanupPriority
-//release multiple donations if they were waiting on released lock
+void
+ThreadUpdatePriorityAfterLockRelease(
+	IN PTHREAD pThread,
+	IN PMUTEX Mutex
+) 
+{
+	PLIST_ENTRY pEntry;
+	LIST_ITERATOR Iterator;
+
+	pEntry = NULL;
+
+	ListIteratorInit(&pThread->Donations, &Iterator);
+
+	//release multiple donations if they were waiting on released lock
+	while ((pEntry = ListIteratorNext(&Iterator)) != NULL) {
+		PTHREAD pDonorThread = CONTAINING_RECORD(pEntry, THREAD, ReadyList);
+		if (pDonorThread->LockWaitedOn == Mutex) {
+			RemoveEntryList(pEntry);
+		}
+	}
+
+	pThread->LockWaitedOn = NULL;
+
+	ThreadUpdatePriority(pThread);
+}
+
 
 THREAD_PRIORITY
 ThreadGetPriority(
@@ -710,6 +760,7 @@ ThreadSetPriority(
 	if (GetCurrentThread()->Priority > NewPriority) {
 		return;
 	}
+
     GetCurrentThread()->Priority = NewPriority;
 }
 

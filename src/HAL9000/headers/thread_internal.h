@@ -306,5 +306,6 @@ ThreadUpdatePriority(
 
 void
 ThreadUpdatePriorityAfterLockRelease(
-	IN PTHREAD pThread
+	IN PTHREAD pThread,
+	IN PMUTEX Mutex
 );

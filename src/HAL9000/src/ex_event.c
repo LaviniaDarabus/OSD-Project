@@ -44,7 +44,7 @@ void ExEventTimerSignal(
 	LockAcquire(&Event->EventLock, &oldState);
 
 	ListIteratorInit(&Event->WaitingList, &it);
-	LOG("List size: %d", ListSize(&Event->WaitingList));
+	//LOG("List size: %d", ListSize(&Event->WaitingList));
 	_InterlockedExchange8(&Event->Signaled, TRUE);
 		while ((pEntry = ListIteratorNext(&it)) != NULL)
 		{
@@ -52,7 +52,7 @@ void ExEventTimerSignal(
 		if (pThread->timerCountTicks > 0) {
 			//_InterlockedDecrement(&pThread->timerCountTicks);
 			pThread->timerCountTicks--;
-			LOGPL("Decrementeaza");
+			//LOGPL("Decrementeaza");
 			}
 		else {
 			RemoveEntryList(pEntry);
@@ -60,7 +60,7 @@ void ExEventTimerSignal(
 			_InterlockedExchange8(&pThread->timerON, FALSE);
 			
 			
-			LOGPL("Deblocheaza threadul");
+			//LOGPL("Deblocheaza threadul");
 
 			}
 	}
@@ -145,7 +145,7 @@ ExEventWaitForSignal(
 		}
 
 		ThreadTakeBlockLock();
-		LOGTPL("a adaugat threadul in waiting list..nr th: %d ", ListSize(&Event->WaitingList));
+		//LOGTPL("a adaugat threadul in waiting list..nr th: %d ", ListSize(&Event->WaitingList));
         LockRelease(&Event->EventLock, dummyState);
         ThreadBlock();
 		

@@ -39,7 +39,7 @@ MutexAcquire(
     if (pCurrentThread == Mutex->Holder)
     {
         ASSERT( Mutex->CurrentRecursivityDepth < Mutex->MaxRecursivityDepth );
-
+		pCurrentThread->LockWaitedOn = NULL; //clear 
         Mutex->CurrentRecursivityDepth++;
         return;
     }
@@ -98,7 +98,7 @@ MutexRelease(
 	//Check if threads are waiting on this lock and update own priority
 	//ThreadUpdatePriority(Mutex->Holder);
 
-	//ThreadUpdatePriorityAfterLockRelease(GetCurrentThread());
+	ThreadUpdatePriorityAfterLockRelease(Mutex->Holder, Mutex);
 
     LockAcquire(&Mutex->MutexLock, &oldState);
 
