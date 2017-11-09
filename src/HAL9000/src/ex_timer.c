@@ -87,14 +87,16 @@ ExTimerWait(
         return;
     }
 	PTHREAD pCurrentThread;
+
+	//	INTR_STATE dummyState;
+
 		
 	pCurrentThread = GetCurrentThread();
+	//LockAcquire(&Timer->TimerLock, &dummyState);
 
 	if (Timer->Type != ExTimerTypeAbsolute)
 	{
 		//rotunjesc in sus
-		//mai jos calculez numarul de tickuri pe care un thread trebuie sa-l astepte rotunjind rezultatul in sus
-		//timerCountTicks=Timer->ReloadTimeUs / SCHEDULER_TIMER_INTERRUPT_TIME_US
 		pCurrentThread->timerCountTicks = (Timer->ReloadTimeUs + (IomuGetShedulerTimerInterrupt() / 2)) / IomuGetShedulerTimerInterrupt();
 	}
 	else
@@ -108,7 +110,7 @@ ExTimerWait(
 		WaitSignalTimerSleep();
 		
 	}
-
+		//LockRelease(&Timer->TimerLock, dummyState);
 }
 
 void

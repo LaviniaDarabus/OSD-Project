@@ -86,6 +86,7 @@ _SpawnThreadAndCheckPriority(
 
         if (!_ThreadValidatePriority(Priority))
         {
+			printf("Breaking at spawn\n");
             bPriorityCheckFailed = TRUE;
             __leave;
         }
@@ -134,6 +135,7 @@ STATUS
                                               ThreadPriorityMaximum,
                                               &pThread,
                                               &bCheckFailed);
+		printf("Reached\n");
         if (!SUCCEEDED(status) || bCheckFailed)
         {
             status = STATUS_ASSERTION_FAILURE;
@@ -283,6 +285,8 @@ STATUS
 
             MutexRelease(&mutexes[1]);
             bReleasedMutexes[1] = TRUE;
+
+			printf("Close\n");
 
             if (!_ThreadValidatePriority(ThreadPriorityDefault))
             {

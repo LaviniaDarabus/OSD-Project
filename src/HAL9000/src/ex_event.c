@@ -50,9 +50,9 @@ void ExEventTimerSignal(
 		{
 		PTHREAD pThread = CONTAINING_RECORD(pEntry, THREAD, ReadyList);
 		if (pThread->timerCountTicks > 0) {
-		//	LOGPL("Tickuri %u \n" + pThread->timerCountTicks);
+			//_InterlockedDecrement(&pThread->timerCountTicks);
 			pThread->timerCountTicks--;
-			LOGPL("Decrementeaza");
+			//LOGPL("Decrementeaza");
 			}
 		else {
 			RemoveEntryList(pEntry);
@@ -60,7 +60,7 @@ void ExEventTimerSignal(
 			_InterlockedExchange8(&pThread->timerON, FALSE);
 			
 			
-			LOGPL("Deblocheaza threadul");
+			//LOGPL("Deblocheaza threadul");
 
 			}
 	}
@@ -113,35 +113,6 @@ ExEventClearSignal(
     _InterlockedExchange8(&Event->Signaled, FALSE);
 }
 
-
-static
-INT64
-(__cdecl _TickCompare) (
-	IN      PLIST_ENTRY     FirstElem,
-	IN      PLIST_ENTRY     SecondElem,
-	IN_OPT  PVOID           Context
-	)
-{
-
-	ASSERT(NULL != FirstElem);
-	ASSERT(NULL != SecondElem);
-	ASSERT(Context == NULL);
-
-	PTHREAD thread1 = CONTAINING_RECORD(FirstElem, THREAD, ReadyList);
-	PTHREAD thread2 = CONTAINING_RECORD(SecondElem, THREAD, ReadyList);
-
-	if (thread1->timerCountTicks > thread2->timerCountTicks) {
-		return -1;
-	}
-	else {
-		if (thread1->timerCountTicks == thread2->timerCountTicks) {
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
 void
 ExEventWaitForSignal(
     INOUT   EX_EVENT*      Event
@@ -166,15 +137,15 @@ ExEventWaitForSignal(
         
 		if (pCurrentThread->timerON == TRUE)
 		{
-			//InsertTailList(&Event->WaitingList, &pCurrentThread->ReadyList);
-			InsertOrderedList(&Event->WaitingList, &pCurrentThread->ReadyList, _TickCompare,NULL);
+			//insertionSortList(&Event->WaitingList, &pCurrentThread->ReadyList)
+			//InsertOrderedList(&Event->WaitingList, &pCurrentThread->ReadyList);
 		}
 		else {
 			InsertTailList(&Event->WaitingList, &pCurrentThread->ReadyList);
 		}
 
 		ThreadTakeBlockLock();
-		LOGTPL("a adaugat threadul in waiting list..nr th: %d ", ListSize(&Event->WaitingList));
+		//LOGTPL("a adaugat threadul in waiting list..nr th: %d ", ListSize(&Event->WaitingList));
         LockRelease(&Event->EventLock, dummyState);
         ThreadBlock();
 		

@@ -643,6 +643,104 @@ ThreadGetId(
     return (NULL != pThread) ? pThread->Id : 0;
 }
 
+static FUNC_CompareFunction ThreadComparePriority;
+
+static
+INT64
+(__cdecl ThreadComparePriority) (
+	IN      PLIST_ENTRY     FirstElem,
+	IN      PLIST_ENTRY     SecondElem,
+	IN_OPT  PVOID           Context
+)
+{
+	ASSERT(NULL != FirstElem);
+	ASSERT(NULL != SecondElem);
+	ASSERT(Context == NULL);
+
+	PTHREAD pFirstThread = CONTAINING_RECORD(FirstElem, THREAD, ReadyList);
+	PTHREAD pSecondThread = CONTAINING_RECORD(SecondElem, THREAD, ReadyList);
+
+	if (pFirstThread->Priority > pSecondThread->Priority) {
+		return 1;
+	}
+
+	if (pFirstThread->Priority < pSecondThread->Priority) {
+		return -1;
+	}
+
+	return 0;
+}
+
+void
+ThreadDonatePriority(
+	IN PTHREAD Donor,
+	IN PTHREAD Receiver
+)
+{
+	ASSERT(NULL != Donor);
+	ASSERT(NULL != Receiver);
+
+	InsertOrderedList(&Receiver->Donations, &Donor->ReadyList, ThreadComparePriority, NULL);
+	ThreadUpdatePriority(Receiver);
+}
+
+void
+ThreadUpdatePriority(
+	IN PTHREAD pThread
+)
+{
+
+	ASSERT(NULL != pThread);
+
+	PLIST_ENTRY pEntry;
+	pEntry = RemoveHeadList(&pThread->Donations);
+
+	ASSERT(NULL != pEntry);
+	
+	if (pEntry != &pThread->Donations)//go through donations list and pick highest priority
+	{
+		PTHREAD pDonorThread = CONTAINING_RECORD(pEntry, THREAD, ReadyList);
+		pThread->Priority = pDonorThread->Priority; //receive donation
+		if (pThread->LockWaitedOn != NULL) {//check if receiver is waiting on a lock
+			PMUTEX requiredLock = pThread->LockWaitedOn;
+			if (requiredLock->Holder->Priority < pThread->Priority) {
+				ThreadDonatePriority(pThread, requiredLock->Holder);
+			}
+		}
+	}
+	else {
+		pThread->Priority = pThread->InitialPriority;
+	}
+}
+
+//cleanupPriority
+void
+ThreadUpdatePriorityAfterLockRelease(
+	IN PTHREAD pThread,
+	IN PMUTEX Mutex
+) 
+{
+	PLIST_ENTRY pEntry;
+	LIST_ITERATOR Iterator;
+
+	pEntry = NULL;
+
+	ListIteratorInit(&pThread->Donations, &Iterator);
+
+	//release multiple donations if they were waiting on released lock
+	while ((pEntry = ListIteratorNext(&Iterator)) != NULL) {
+		PTHREAD pDonorThread = CONTAINING_RECORD(pEntry, THREAD, ReadyList);
+		if (pDonorThread->LockWaitedOn == Mutex) {
+			RemoveEntryList(pEntry);
+		}
+	}
+
+	pThread->LockWaitedOn = NULL;
+
+	ThreadUpdatePriority(pThread);
+}
+
+
 THREAD_PRIORITY
 ThreadGetPriority(
     IN_OPT  PTHREAD             Thread
@@ -659,6 +757,9 @@ ThreadSetPriority(
     )
 {
     ASSERT(ThreadPriorityLowest <= NewPriority && NewPriority <= ThreadPriorityMaximum);
+	if (GetCurrentThread()->Priority > NewPriority) {
+		return;
+	}
 
     GetCurrentThread()->Priority = NewPriority;
 }
@@ -791,6 +892,11 @@ _ThreadInit(
         pThread->Id = _ThreadSystemGetNextTid();
         pThread->State = ThreadStateBlocked;
         pThread->Priority = Priority;
+
+		pThread->InitialPriority = Priority;
+		pThread->LockWaitedOn = NULL;
+		InitializeListHead(&pThread->Donations);
+
 
 		pThread->timerCountTicks = 0;
 		//initializam timerON
