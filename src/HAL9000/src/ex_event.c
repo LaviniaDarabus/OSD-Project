@@ -113,6 +113,32 @@ ExEventClearSignal(
     _InterlockedExchange8(&Event->Signaled, FALSE);
 }
 
+static
+INT64
+(__cdecl _TickCompare) (
+	IN      PLIST_ENTRY     FirstElem,
+	IN      PLIST_ENTRY     SecondElem,
+	IN_OPT  PVOID           Context
+	)
+	 {
+	ASSERT(NULL != FirstElem);
+	ASSERT(NULL != SecondElem);
+	ASSERT(Context == NULL);
+	PTHREAD thread1 = CONTAINING_RECORD(FirstElem, THREAD, ReadyList);
+	PTHREAD thread2 = CONTAINING_RECORD(SecondElem, THREAD, ReadyList);
+
+		if (thread1->timerCountTicks > thread2->timerCountTicks) {
+		return -1;
+		
+	}
+	else {
+		if (thread1->timerCountTicks == thread2->timerCountTicks) {
+			return 0;
+		}
+	}
+		return 1;
+}
+
 void
 ExEventWaitForSignal(
     INOUT   EX_EVENT*      Event
@@ -138,7 +164,7 @@ ExEventWaitForSignal(
 		if (pCurrentThread->timerON == TRUE)
 		{
 			//insertionSortList(&Event->WaitingList, &pCurrentThread->ReadyList)
-			//InsertOrderedList(&Event->WaitingList, &pCurrentThread->ReadyList);
+			InsertOrderedList(&Event->WaitingList, &pCurrentThread->ReadyList, _TickCompare, NULL);
 		}
 		else {
 			InsertTailList(&Event->WaitingList, &pCurrentThread->ReadyList);
