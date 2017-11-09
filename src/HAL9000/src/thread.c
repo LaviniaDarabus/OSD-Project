@@ -643,6 +643,54 @@ ThreadGetId(
     return (NULL != pThread) ? pThread->Id : 0;
 }
 
+void
+ThreadDonatePriority(
+	IN PTHREAD Donor,
+	IN PTHREAD Receiver
+)
+{
+	ASSERT(NULL != Donor);
+	ASSERT(NULL != Receiver);
+
+	InsertTailList(&Receiver->Donations, &Donor->ReadyList);
+	ThreadUpdatePriority(Receiver);
+}
+
+void
+ThreadUpdatePriority(
+	IN PTHREAD pThread
+)
+{
+
+	ASSERT(NULL != pThread);
+
+	PLIST_ENTRY pEntry;
+	pEntry = RemoveHeadList(&pThread->Donations);
+
+	PTHREAD pDonorThread = CONTAINING_RECORD(pEntry, THREAD, ReadyList);
+	pThread->Priority = pDonorThread->Priority; //receive donation
+
+	ASSERT(NULL != pEntry);
+	
+	if (pEntry != &pThread->Donations)//go through donations list and pick highest priority
+	{
+		PTHREAD pDonorThread = CONTAINING_RECORD(pEntry, THREAD, ReadyList);
+		pThread->Priority = pDonorThread->Priority; //receive donation
+		if (pThread->LockWaitedOn != NULL) {//check if receiver is waiting on a lock
+			PMUTEX requiredLock = pThread->LockWaitedOn;
+			if (requiredLock->Holder->Priority < pThread->Priority) {
+				ThreadDonatePriority(pThread, requiredLock->Holder);
+			}
+		}
+	}
+	else {
+		pThread->Priority = pThread->InitialPriority;
+	}
+}
+
+//cleanupPriority
+//release multiple donations if they were waiting on released lock
+
 THREAD_PRIORITY
 ThreadGetPriority(
     IN_OPT  PTHREAD             Thread
@@ -659,7 +707,9 @@ ThreadSetPriority(
     )
 {
     ASSERT(ThreadPriorityLowest <= NewPriority && NewPriority <= ThreadPriorityMaximum);
-
+	if (GetCurrentThread()->Priority > NewPriority) {
+		return;
+	}
     GetCurrentThread()->Priority = NewPriority;
 }
 
@@ -791,6 +841,11 @@ _ThreadInit(
         pThread->Id = _ThreadSystemGetNextTid();
         pThread->State = ThreadStateBlocked;
         pThread->Priority = Priority;
+
+		pThread->InitialPriority = Priority;
+		pThread->LockWaitedOn = NULL;
+		InitializeListHead(&pThread->Donations);
+
 
 		pThread->timerCountTicks = 0;
 		//initializam timerON

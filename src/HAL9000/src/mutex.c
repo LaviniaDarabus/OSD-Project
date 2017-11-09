@@ -55,6 +55,11 @@ MutexAcquire(
 
     while (Mutex->Holder != pCurrentThread)
     {
+		pCurrentThread->LockWaitedOn = Mutex;
+		ASSERT(NULL != pCurrentThread->LockWaitedOn);
+		if (Mutex->Holder->Priority < pCurrentThread->Priority) {
+			ThreadDonatePriority(pCurrentThread, Mutex->Holder);
+		}
         InsertTailList(&Mutex->WaitingList, &pCurrentThread->ReadyList);
         ThreadTakeBlockLock();
         LockRelease(&Mutex->MutexLock, dummyState);
@@ -89,6 +94,11 @@ MutexRelease(
     }
 
     pEntry = NULL;
+
+	//Check if threads are waiting on this lock and update own priority
+	//ThreadUpdatePriority(Mutex->Holder);
+
+	//ThreadUpdatePriorityAfterLockRelease(GetCurrentThread());
 
     LockAcquire(&Mutex->MutexLock, &oldState);
 

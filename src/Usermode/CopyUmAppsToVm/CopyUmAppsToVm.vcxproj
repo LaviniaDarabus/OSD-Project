@@ -55,7 +55,7 @@
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <PostBuildEvent>
-      <Command>..\..\..\postbuild\copy_um_apps_to_vm.cmd $(SolutionDir)..\bin\$(PlatformName)\$(Configuration)\UserMode\ Applications</Command>
+      <Command>..\..\postbuild\copy_um_apps_to_vm.cmd $(SolutionDir)..\bin\$(PlatformName)\$(Configuration)\UserMode\ Applications</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -65,7 +65,7 @@
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <PostBuildEvent>
-      <Command>..\..\..\postbuild\copy_um_apps_to_vm.cmd $(SolutionDir)..\bin\$(PlatformName)\$(Configuration)\UserMode\ Applications</Command>
+      <Command>..\..\postbuild\copy_um_apps_to_vm.cmd $(SolutionDir)..\bin\$(PlatformName)\$(Configuration)\UserMode\ Applications</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

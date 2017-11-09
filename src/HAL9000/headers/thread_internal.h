@@ -4,6 +4,7 @@
 #include "ref_cnt.h"
 #include "ex_event.h"
 #include "thread.h"
+#include "mutex.h"
 
 typedef enum _THREAD_STATE
 {
@@ -40,6 +41,16 @@ typedef struct _THREAD
 
     // Currently the thread priority is not used for anything
     THREAD_PRIORITY         Priority;
+
+	//Original priority of the thread
+	THREAD_PRIORITY         InitialPriority;
+
+	//The mutex the current thread is waiting on
+	PMUTEX					LockWaitedOn;
+
+	//Threads that donated their priority to the current thread
+	LIST_ENTRY 				Donations;
+
     THREAD_STATE            State;
 
     // valid only if State == ThreadStateTerminated
@@ -52,13 +63,10 @@ typedef struct _THREAD
     // blocks and a thread on another CPU which wants to unblock it
     LOCK                    BlockLock;
 
-    // List of all the threads in the system (including those blocked or dying)
     LIST_ENTRY              AllList;
 
-    // List of the threads ready to run
     LIST_ENTRY              ReadyList;
 
-    // List of the threads in the same process
     LIST_ENTRY              ProcessList;
 
     // Incremented on each clock tick for the running thread
@@ -89,6 +97,8 @@ typedef struct _THREAD
 
 	QWORD timerCountTicks;
 	BOOLEAN timerON;
+
+		
 
     struct _PROCESS*        Process;
 } THREAD, *PTHREAD;
@@ -282,3 +292,19 @@ void
 ThreadSetPriority(
     IN      THREAD_PRIORITY     NewPriority
     );
+
+void
+ThreadDonatePriority(
+	IN		PTHREAD Donor,
+	IN		PTHREAD Receiver
+);
+
+void
+ThreadUpdatePriority(
+	IN PTHREAD pThread
+);
+
+void
+ThreadUpdatePriorityAfterLockRelease(
+	IN PTHREAD pThread
+);

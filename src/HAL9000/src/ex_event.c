@@ -44,13 +44,13 @@ void ExEventTimerSignal(
 	LockAcquire(&Event->EventLock, &oldState);
 
 	ListIteratorInit(&Event->WaitingList, &it);
-	//LOG("List size: %d", ListSize(&Event->WaitingList));
+	LOG("List size: %d", ListSize(&Event->WaitingList));
 	_InterlockedExchange8(&Event->Signaled, TRUE);
 		while ((pEntry = ListIteratorNext(&it)) != NULL)
 		{
 		PTHREAD pThread = CONTAINING_RECORD(pEntry, THREAD, ReadyList);
 		if (pThread->timerCountTicks > 0) {
-		//	LOGPL("Tickuri %u \n" + pThread->timerCountTicks);
+			//_InterlockedDecrement(&pThread->timerCountTicks);
 			pThread->timerCountTicks--;
 			LOGPL("Decrementeaza");
 			}
@@ -113,35 +113,6 @@ ExEventClearSignal(
     _InterlockedExchange8(&Event->Signaled, FALSE);
 }
 
-
-static
-INT64
-(__cdecl _TickCompare) (
-	IN      PLIST_ENTRY     FirstElem,
-	IN      PLIST_ENTRY     SecondElem,
-	IN_OPT  PVOID           Context
-	)
-{
-
-	ASSERT(NULL != FirstElem);
-	ASSERT(NULL != SecondElem);
-	ASSERT(Context == NULL);
-
-	PTHREAD thread1 = CONTAINING_RECORD(FirstElem, THREAD, ReadyList);
-	PTHREAD thread2 = CONTAINING_RECORD(SecondElem, THREAD, ReadyList);
-
-	if (thread1->timerCountTicks > thread2->timerCountTicks) {
-		return -1;
-	}
-	else {
-		if (thread1->timerCountTicks == thread2->timerCountTicks) {
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
 void
 ExEventWaitForSignal(
     INOUT   EX_EVENT*      Event
@@ -166,8 +137,8 @@ ExEventWaitForSignal(
         
 		if (pCurrentThread->timerON == TRUE)
 		{
-			//InsertTailList(&Event->WaitingList, &pCurrentThread->ReadyList);
-			InsertOrderedList(&Event->WaitingList, &pCurrentThread->ReadyList, _TickCompare,NULL);
+			//insertionSortList(&Event->WaitingList, &pCurrentThread->ReadyList)
+			//InsertOrderedList(&Event->WaitingList, &pCurrentThread->ReadyList);
 		}
 		else {
 			InsertTailList(&Event->WaitingList, &pCurrentThread->ReadyList);
