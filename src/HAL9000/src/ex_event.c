@@ -58,8 +58,8 @@ void ExEventTimerSignal(
 			RemoveEntryList(pEntry);
 			ThreadUnblock(pThread);
 			_InterlockedExchange8(&pThread->timerON, FALSE);
-
-
+			
+			
 			LOGPL("Deblocheaza threadul");
 
 			}
@@ -82,7 +82,7 @@ ExEventSignal(
 
     LockAcquire(&Event->EventLock, &oldState);
     _InterlockedExchange8(&Event->Signaled, TRUE);
-
+    
     for(pEntry = RemoveHeadList(&Event->WaitingList);
         pEntry != &Event->WaitingList;
         pEntry = RemoveHeadList(&Event->WaitingList)
@@ -142,34 +142,6 @@ INT64
 	return 1;
 }
 
-static
-INT64
-(__cdecl _PriorityCompare) (
-	IN      PLIST_ENTRY     FirstElem,
-	IN      PLIST_ENTRY     SecondElem,
-	IN_OPT  PVOID           Context
-	)
-{
-
-	ASSERT(NULL != FirstElem);
-	ASSERT(NULL != SecondElem);
-	ASSERT(Context == NULL);
-
-	PTHREAD thread1 = CONTAINING_RECORD(FirstElem, THREAD, ReadyList);
-	PTHREAD thread2 = CONTAINING_RECORD(SecondElem, THREAD, ReadyList);
-
-	if (ThreadGetPriority(thread1) > ThreadGetPriority(thread2)) {
-		return -1;
-	}
-	else {
-		if (ThreadGetPriority(thread1) == ThreadGetPriority(thread2)) {
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
 void
 ExEventWaitForSignal(
     INOUT   EX_EVENT*      Event
@@ -191,21 +163,21 @@ ExEventWaitForSignal(
     while (TRUE != _InterlockedCompareExchange8(&Event->Signaled, newState, TRUE))
     {
         LockAcquire(&Event->EventLock, &dummyState);
-
+        
 		if (pCurrentThread->timerON == TRUE)
 		{
 			//InsertTailList(&Event->WaitingList, &pCurrentThread->ReadyList);
 			InsertOrderedList(&Event->WaitingList, &pCurrentThread->ReadyList, _TickCompare,NULL);
 		}
 		else {
-			InsertOrderedList(&Event->WaitingList, &pCurrentThread->ReadyList, _PriorityCompare, NULL);
+			InsertTailList(&Event->WaitingList, &pCurrentThread->ReadyList);
 		}
 
 		ThreadTakeBlockLock();
-		LOGTPL("a adaugat threadul in waiting list..nr th: %d ", ListSize(&Event->WaitingList));
+		//LOGTPL("a adaugat threadul in waiting list..nr th: %d ", ListSize(&Event->WaitingList));
         LockRelease(&Event->EventLock, dummyState);
         ThreadBlock();
-
+		
         // if we are waiting for a notification type event => all threads
         // must be woken up => we have no reason to check the state of the
         // event again

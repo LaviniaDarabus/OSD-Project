@@ -152,6 +152,12 @@ _IsrExceptionHandler(
 
         LOG_ERROR("Could not handle exception 0x%x [%s]\n", InterruptIndex, EXCEPTION_NAME[InterruptIndex]);
 
+		if (!GdtIsSegmentPrivileged((WORD)StackPointer->Registers.CS))
+		{
+			PPROCESS proc = GetCurrentProcess();
+			ProcessTerminate(proc);
+		}
+
         DumpInterruptStack(StackPointer, ErrorCodeAvailable );
         DumpControlRegisters();
         DumpProcessorState(ProcessorState);

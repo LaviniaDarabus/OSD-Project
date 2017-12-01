@@ -52,8 +52,6 @@ _ThreadSystemGetNextTid(
     return _InterlockedExchangeAdd64(&__currentTid, TID_INCREMENT);
 }
 
-PTHREAD lowestPriorityThread;
-int lowestPriority = 50;
 static
 STATUS
 _ThreadInit(
@@ -535,45 +533,7 @@ ThreadUnblock(
     ASSERT(ThreadStateBlocked == Thread->State);
 
     LockAcquire(&m_threadSystemData.ReadyThreadsLock, &dummyState);
-
-
-	//check here if the current to be released has bigger priority than all
-
-	PLIST_ENTRY pEntry;
-	PTHREAD highestPrThread;
-	int maxPriority = ThreadGetPriority(Thread);
-	pEntry = NULL;
-	highestPrThread = NULL;
-	//compare with
-
-
-	//compare with all threads from all CPU ready lists
-	for (pEntry = RemoveHeadList(&m_threadSystemData.ReadyThreadsList);
-		pEntry != &m_threadSystemData.ReadyThreadsList;
-		pEntry = RemoveHeadList(&m_threadSystemData.ReadyThreadsList)
-		)
-	{
-		PTHREAD thoughAllThreads = CONTAINING_RECORD(pEntry, THREAD, ReadyList);
-		if (ThreadGetPriority(thoughAllThreads) >= maxPriority)
-		{
-			maxPriority = ThreadGetPriority(thoughAllThreads);
-			highestPrThread = thoughAllThreads;
-		}
-	}
-	//if bigger than current too
-	if (ThreadGetPriority(highestPrThread) > ThreadGetPriority(GetCurrentThread()))
-		highestPrThread = GetCurrentThread();
-
-	//if found insert on first position
-	InsertHeadList(&m_threadSystemData.ReadyThreadsList, &highestPrThread->ReadyList);
-	//we willingly let a new thread to run now, that we have a higher priority one on top
-	//unless it has already the highest priority
-	if (NULL != highestPrThread)
-		ThreadYield();
-
-
-
-
+    InsertTailList(&m_threadSystemData.ReadyThreadsList, &Thread->ReadyList);
     Thread->State = ThreadStateReady;
     LockRelease(&m_threadSystemData.ReadyThreadsLock, dummyState );
     LockRelease(&Thread->BlockLock, oldState);
@@ -993,7 +953,7 @@ _ThreadSetupMainThreadUserStack(
     ASSERT(ResultingStack != NULL);
     ASSERT(Process != NULL);
 
-    *ResultingStack = InitialStack;
+    *ResultingStack = (PVOID)PtrDiff(InitialStack, 0x108);
 
     return STATUS_SUCCESS;
 }
@@ -1017,15 +977,6 @@ _ThreadSchedule(
     ASSERT( NULL != pCurrentThread );
 
     pCpu = GetCurrentPcpu();
-
-
-	//check repeatedly to store the lowest priority thread running to be the one giving its priority to the highest demanding one
-	if (ThreadGetPriority(pCurrentThread) < lowestPriority)
-	{
-		lowestPriorityThread = pCurrentThread;
-		lowestPriority = ThreadGetPriority(pCurrentThread);
-	}
-
 
     // save previous thread
     pCpu->ThreadData.PreviousThread = pCurrentThread;
@@ -1053,9 +1004,7 @@ _ThreadSchedule(
         pCurrentThread->UninterruptedTicks = 0;
 
         SetCurrentThread(pNextThread);
-		//switch the next thread with the one having the smallest priority
-
-        ThreadSwitch(&lowestPriorityThread->Stack, pNextThread->Stack);
+        ThreadSwitch( &pCurrentThread->Stack, pNextThread->Stack);
 
         ASSERT(INTR_OFF == CpuIntrGetState());
         ASSERT(LockIsOwner(&m_threadSystemData.ReadyThreadsLock));
