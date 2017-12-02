@@ -90,6 +90,8 @@ typedef struct _THREAD
 	QWORD timerCountTicks;
 	BOOLEAN timerON;
 
+	QWORD					handle;
+
     struct _PROCESS*        Process;
 } THREAD, *PTHREAD;
 

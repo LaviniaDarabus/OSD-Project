@@ -264,6 +264,8 @@
     <ClCompile Include="src\os_time.c" />
     <ClCompile Include="src\vmm.c" />
     <ClCompile Include="src\vm_reservation_space.c" />
+    <ClCompile Include="syscall_func.c" />
+    <ClCompile Include="um_handle_manager.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\common\mem_structures.h" />
@@ -366,6 +368,7 @@
     <ClInclude Include="headers\um_application.h" />
     <ClInclude Include="headers\vmm.h" />
     <ClInclude Include="headers\vm_reservation_space.h" />
+    <ClInclude Include="um_handle_manager.h" />
   </ItemGroup>
   <ItemGroup>
     <YASM Include="src\_mboot32.yasm">

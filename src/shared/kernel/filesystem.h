@@ -33,6 +33,9 @@ typedef struct _FILE_OBJECT
 
     // real file size
     QWORD                   FileSize;
+
+	QWORD					handle;
+	LIST_ENTRY				file;
 } FILE_OBJECT, *PFILE_OBJECT;
 
 typedef struct _VPB_FLAGS

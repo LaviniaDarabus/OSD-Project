@@ -1,0 +1,25 @@
+Index: bochs/bx_debug/symbols.cc
+===================================================================
+--- bochs-2.2.6.orig/bx_debug/symbols.cc	(revision 11499)
++++ bochs-2.2.6/bx_debug/symbols.cc	(working copy)
+@@ -79,12 +79,19 @@
+    Until a more portable solution is found, at least make it easy
+    to disable the template code:  just set BX_HAVE_HASH_MAP=0
+    in config.h */
+-#if BX_HAVE_HASH_MAP
++#ifdef __GNUC__
++#include <ext/hash_map>
++#elif BX_HAVE_HASH_MAP
+ #include <hash_map>
+ #elif BX_HAVE_HASH_MAP_H
+ #include <hash_map.h>
+ #endif
+ 
++namespace std
++{
++	using namespace __gnu_cxx;
++}
++
+ #if BX_HAVE_SET
+ #include <set>
+ #elif BX_HAVE_SET_H

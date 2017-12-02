@@ -112,3 +112,8 @@ PPROCESS
 GetCurrentProcess(
     void
     );
+
+LIST_ENTRY
+getProcessList(
+	void
+);

@@ -68,10 +68,10 @@ SyscallHandler(
 			status = SyscallProcessExit((STATUS)pSyscallParameters[0]);
 			break;
 		case SyscallIdFileWrite:
-			
-				status = SyscallFileWrite((UM_HANDLE)pSyscallParameters[0], (PVOID)pSyscallParameters[1], (QWORD)pSyscallParameters[2], (QWORD*)pSyscallParameters[3]);
-			
-			
+			status = SyscallFileWrite((UM_HANDLE)pSyscallParameters[0], (PVOID)pSyscallParameters[1], (QWORD)pSyscallParameters[2], (QWORD*)pSyscallParameters[3]);
+			break;
+		case SyscallIdThreadExit:
+			status = SyscallThreadExit((STATUS)pSyscallParameters[0]);
 			break;
 	/*	case SyscallIdProcessCreate:
 			status = SyscallProcessCreate((char*)pSyscallParameters[0], (QWORD)pSyscallParameters[1],(char*) pSyscallParameters[2],(QWORD) pSyscallParameters[3],(UM_HANDLE*) pSyscallParameters[4]);
@@ -157,43 +157,3 @@ SyscallCpuInit(
     LOG_TRACE_USERMODE("Successfully set STAR to 0x%X\n", starMsr.Raw);
 }
 
-
-STATUS
-SyscallFileWrite(
-	IN  UM_HANDLE                   FileHandle,
-	IN_READS_BYTES(BytesToWrite)
-	PVOID                       Buffer,
-	IN  QWORD                       BytesToWrite,
-	OUT QWORD*                      BytesWritten
-) {
-	STATUS status;
-	PFILE_OBJECT FileHandleObject;
-	FileHandleObject = NULL;
-
-	if (FileHandle == UM_FILE_HANDLE_STDOUT)
-	{
-		LOG("[%s]:[%s]\n", ProcessGetName(NULL), Buffer);
-		status = STATUS_SUCCESS;
-		*BytesWritten = strlen(Buffer) + 1;
-	}
-	else
-	{
-		status = IoWriteFile(FileHandleObject, BytesToWrite, NULL, Buffer, BytesWritten);
-	}
-	return status;
-}
-
-STATUS
-SyscallValidateInterface(
-	IN  SYSCALL_IF_VERSION          InterfaceVersion
-) {
-	return InterfaceVersion == SYSCALL_IMPLEMENTED_IF_VERSION ? STATUS_SUCCESS : STATUS_INCOMPATIBLE_INTERFACE;
-}
-
-STATUS
-SyscallProcessExit(
-	IN      STATUS                  ExitStatus
-) {
-	ProcessTerminate(NULL);
-	return ExitStatus;
-}

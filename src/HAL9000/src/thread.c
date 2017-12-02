@@ -795,7 +795,7 @@ _ThreadInit(
 		pThread->timerCountTicks = 0;
 		//initializam timerON
 		pThread->timerON = FALSE;
-		LOGPL("Thread %d with name %s is created :) \n", pThread->Id, pThread->Name);
+		//LOGPL("Thread %d with name %s is created :) \n", pThread->Id, pThread->Name);
 
         LockInit(&pThread->BlockLock);
 

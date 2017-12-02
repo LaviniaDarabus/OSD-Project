@@ -402,6 +402,12 @@
     <ClCompile Include="src\test_process.c">
       <Filter>Source Files\debug\test\userprog</Filter>
     </ClCompile>
+    <ClCompile Include="syscall_func.c">
+      <Filter>Source Files\usermode</Filter>
+    </ClCompile>
+    <ClCompile Include="um_handle_manager.c">
+      <Filter>Source Files\usermode</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\HAL9000.h">
@@ -703,6 +709,9 @@
     </ClInclude>
     <ClInclude Include="headers\test_process.h">
       <Filter>Header Files\debug\test\userprog</Filter>
+    </ClInclude>
+    <ClInclude Include="um_handle_manager.h">
+      <Filter>Header Files\usermode</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

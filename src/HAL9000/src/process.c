@@ -24,6 +24,15 @@ typedef struct _PROCESS_SYSTEM_DATA
 
 static PROCESS_SYSTEM_DATA m_processData;
 
+LIST_ENTRY
+getProcessList(
+	void
+	)
+{
+	return m_processData.ProcessList;
+}
+
+
 static
 __forceinline
 PID
