@@ -10,6 +10,18 @@ typedef DWORD SYSCALL_IF_VERSION;
 
 typedef QWORD UM_HANDLE;
 
+typedef enum handleType {
+	HANDLE_TYPE_PROCESS = 567,
+	HANDLE_TYPE_FILE = 568,
+	HANDLE_TYPE_THREAD = 569
+}HandleType;
+
+typedef struct _UM_HANDLE_STRUCT
+{
+	UM_HANDLE       HandleID;
+	LIST_ENTRY      HandleList;
+} UM_HANDLE_STRUCT, *PUM_HANDLE_STRUCT;
+
 #include "mem_structures.h"
 #include "thread_defs.h"
 #include "process_defs.h"

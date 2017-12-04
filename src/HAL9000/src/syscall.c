@@ -73,11 +73,27 @@ SyscallHandler(
 		case SyscallIdThreadExit:
 			status = SyscallThreadExit((STATUS)pSyscallParameters[0]);
 			break;
-	/*	case SyscallIdProcessCreate:
+		case SyscallIdProcessCreate:
 			status = SyscallProcessCreate((char*)pSyscallParameters[0], (QWORD)pSyscallParameters[1],(char*) pSyscallParameters[2],(QWORD) pSyscallParameters[3],(UM_HANDLE*) pSyscallParameters[4]);
-			LOG("syscall ID !!!!!!!!!");
 			break;
-			*/
+		case SyscallIdProcessWaitForTermination:
+			status = SyscallProcessWaitForTermination((UM_HANDLE)pSyscallParameters[0], (STATUS*)pSyscallParameters[1]);
+			break;
+		case SyscallIdProcessGetPid:
+			status = SyscallProcessGetPid((UM_HANDLE)pSyscallParameters[0], (PID*)pSyscallParameters[1]);
+			break;
+		case SyscallIdProcessCloseHandle:
+			status = SyscallProcessCloseHandle((UM_HANDLE)pSyscallParameters[0]);
+			break;
+		case SyscallIdFileCreate:
+			status = SyscallFileCreate((char*)pSyscallParameters[0], (QWORD)pSyscallParameters[1], (BOOLEAN)pSyscallParameters[2], (BOOLEAN)pSyscallParameters[3], (UM_HANDLE*)pSyscallParameters[4]);
+			break;
+		case SyscallIdFileClose:
+			status = SyscallFileClose((UM_HANDLE)pSyscallParameters[0]);
+			break;
+		case SyscallIdFileRead:
+			status = SyscallFileRead((UM_HANDLE)pSyscallParameters[0], (PVOID)pSyscallParameters[1], (QWORD)pSyscallParameters[2], (QWORD*)pSyscallParameters[3]);
+			break;
 		}
 
 	}

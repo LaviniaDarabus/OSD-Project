@@ -113,7 +113,7 @@ GetCurrentProcess(
     void
     );
 
-LIST_ENTRY
+PLIST_ENTRY
 getProcessList(
 	void
 );

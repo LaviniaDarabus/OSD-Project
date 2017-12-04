@@ -24,12 +24,12 @@ typedef struct _PROCESS_SYSTEM_DATA
 
 static PROCESS_SYSTEM_DATA m_processData;
 
-LIST_ENTRY
+PLIST_ENTRY
 getProcessList(
 	void
 	)
 {
-	return m_processData.ProcessList;
+	return &m_processData.ProcessList;
 }
 
 
@@ -474,6 +474,22 @@ _ProcessInit(
         }
 
         InitializeListHead(&pProcess->NextProcess);
+		
+
+		
+		InitializeListHead(&pProcess->HandleProcessList);
+		InitializeListHead(&pProcess->OpenedFilesList);
+		PUM_HANDLE_STRUCT handle_str;
+		handle_str= ExAllocatePoolWithTag(PoolAllocateZeroMemory, sizeof(UM_HANDLE_STRUCT), HEAP_FILE_OBJECT_TAG, 0);
+		
+		if (handle_str == NULL)
+		{
+			LOG_FUNC_ERROR_ALLOC("ExAllocatePoolWithTag", sizeof(UM_HANDLE_STRUCT));
+			status = STATUS_HEAP_INSUFFICIENT_RESOURCES;
+			__leave;
+		}
+		handle_str->HandleID = UM_FILE_HANDLE_STDOUT;
+		InsertTailList(&pProcess->HandleProcessList, &handle_str->HandleList);
 
         pProcess->HeaderInfo = ExAllocatePoolWithTag(PoolAllocateZeroMemory, sizeof(PE_NT_HEADER_INFO), HEAP_PROCESS_TAG, 0);
         if (NULL == pProcess->HeaderInfo)

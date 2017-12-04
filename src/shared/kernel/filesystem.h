@@ -1,5 +1,7 @@
 #pragma once
 
+#include "syscall_defs.h"
+
 typedef struct _FILE_OBJECT_FLAGS
 {
     // if set => IoManager will update file offset
@@ -34,8 +36,8 @@ typedef struct _FILE_OBJECT
     // real file size
     QWORD                   FileSize;
 
-	QWORD					handle;
-	LIST_ENTRY				file;
+	UM_HANDLE_STRUCT		Handle;
+	LIST_ENTRY				FileList;
 } FILE_OBJECT, *PFILE_OBJECT;
 
 typedef struct _VPB_FLAGS

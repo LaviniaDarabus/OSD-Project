@@ -5,6 +5,8 @@
 #include "process.h"
 #include "synch.h"
 #include "ex_event.h"
+#include "syscall_defs.h"
+
 
 #define PROCESS_MAX_PHYSICAL_FRAMES     16
 #define PROCESS_MAX_OPEN_FILES          16
@@ -59,9 +61,9 @@ typedef struct _PROCESS
     // VaSpace used only for UM virtual memory allocations
     struct _VMM_RESERVATION_SPACE*  VaSpace;
 
-	QWORD							handle;
-	LIST_ENTRY						handleList;
-	LIST_ENTRY						openFiles;
+	UM_HANDLE_STRUCT				Handle;
+	LIST_ENTRY						HandleProcessList;
+	LIST_ENTRY						OpenedFilesList;
 		
 } PROCESS, *PPROCESS;
 
