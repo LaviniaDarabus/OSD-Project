@@ -12,6 +12,7 @@
 #include "iomu.h"
 #include "thread.h"
 #include "mmu.h"
+#include "thread_internal.h"
 
 
 
@@ -28,15 +29,6 @@ SyscallProcessExit(
 	IN      STATUS                  ExitStatus
 ) {
 	ProcessTerminate(GetCurrentProcess());
-	return ExitStatus;
-}
-
-STATUS
-SyscallThreadExit(
-	IN      STATUS                  ExitStatus
-) {
-
-	ThreadExit(ExitStatus);
 	return ExitStatus;
 }
 
@@ -479,4 +471,138 @@ SyscallFileWrite(
 		status = IoWriteFile(FileHandleObject, BytesToWrite, NULL, Buffer, BytesWritten);
 	}
 	return status;
+}
+
+DWORD threadHandleIncrement = 1;
+
+STATUS
+SyscallThreadCreate(
+	IN      PFUNC_ThreadStart       StartFunction,
+	IN_OPT  PVOID                   Context,
+	OUT     UM_HANDLE*              ThreadHandle
+) {
+	UM_HANDLE handle;
+	char* name = "Name";
+	handle = DWORDS_TO_QWORD(HANDLE_TYPE_THREAD, threadHandleIncrement++);
+	PTHREAD thread;
+	*ThreadHandle = handle;
+	STATUS status = ThreadCreateEx(name, ThreadPriorityDefault, StartFunction, Context, &thread, GetCurrentProcess());
+	thread->handle = handle;
+	if (status != STATUS_SUCCESS) {
+		threadHandleIncrement--;
+		*ThreadHandle = 0;
+	}
+	return status;
+}
+
+PTHREAD findThread(
+	IN_OPT  UM_HANDLE               ThreadHandle
+) {
+	LIST_ITERATOR it;
+	PLIST_ENTRY pEntry;
+	PTHREAD pNextThread;
+
+	if (ThreadHandle == UM_INVALID_HANDLE_VALUE) {
+		return GetCurrentThread();
+	}
+
+	ListIteratorInit(&GetCurrentProcess()->ThreadList, &it);
+	while ((pEntry = ListIteratorNext(&it)) != NULL)
+	{
+		pNextThread = CONTAINING_RECORD(pEntry, THREAD, ProcessList);
+		if (pNextThread->handle == ThreadHandle) {
+			return pNextThread;
+		}
+	}
+	return NULL;
+}
+
+STATUS
+SyscallThreadGetTid(
+	IN_OPT  UM_HANDLE               ThreadHandle,
+	OUT     TID*                    ThreadId
+) {
+	LIST_ITERATOR it;
+	PLIST_ENTRY pEntry;
+	STATUS status = STATUS_SUCCESS;
+	PTHREAD pNextThread;
+
+	if (ThreadHandle == UM_INVALID_HANDLE_VALUE) {
+		*ThreadId = GetCurrentThread()->Id;
+		return STATUS_SUCCESS;
+	}
+
+	if (QWORD_HIGH(ThreadHandle) != HANDLE_TYPE_THREAD) {
+		return STATUS_INVALID_PARAMETER1;
+	}
+
+	ListIteratorInit(&GetCurrentProcess()->ThreadList, &it);
+	while ((pEntry = ListIteratorNext(&it)) != NULL)
+	{
+		pNextThread = CONTAINING_RECORD(pEntry, THREAD, ProcessList);
+		if (pNextThread->handle == ThreadHandle) {
+			*ThreadId = pNextThread->Id;
+			status = STATUS_SUCCESS;
+			break;
+		}
+	}
+	return status;
+}
+
+STATUS
+SyscallThreadExit(
+	IN      STATUS                  ExitStatus
+) {
+	PTHREAD Thread = GetCurrentThread();
+	if (Thread == NULL) {
+		return STATUS_INVALID_PARAMETER1;
+	}
+	//don't wait on closed handle
+	if (Thread->handle == 0) {
+		return STATUS_UNSUCCESSFUL;
+	}
+	//don't wait on already terminated thread
+	if (Thread->State == ThreadStateDying) {
+		return STATUS_UNSUCCESSFUL;
+	}
+	Thread->handle = 0;
+	ThreadExit(ExitStatus);
+	return ExitStatus;
+}
+
+STATUS
+SyscallThreadWaitForTermination(
+	IN      UM_HANDLE               ThreadHandle,
+	OUT     STATUS*                 TerminationStatus
+) {
+	PTHREAD Thread = findThread(ThreadHandle);
+	if (Thread == NULL) {
+		return STATUS_INVALID_PARAMETER1;
+	}
+	//don't wait on closed handle
+	if (Thread->handle == 0) {
+		return STATUS_UNSUCCESSFUL;
+	}
+	//don't wait on already terminated thread
+	if (Thread->State == ThreadStateDying) {
+		return STATUS_UNSUCCESSFUL;
+	}
+
+	ThreadWaitForTermination(Thread, TerminationStatus);
+	return *TerminationStatus;
+}
+
+STATUS
+SyscallThreadCloseHandle(
+	IN      UM_HANDLE               ThreadHandle
+) {
+	PTHREAD Thread = findThread(ThreadHandle);
+	if (Thread == NULL) {
+		return STATUS_INVALID_PARAMETER1;
+	}
+	if (Thread->handle == 0) {
+		return STATUS_UNSUCCESSFUL;
+	}
+	Thread->handle = 0;
+	return STATUS_SUCCESS;
 }
